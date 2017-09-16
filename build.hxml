@@ -1,0 +1,6 @@
+-cp src
+-debug
+-lib heaps
+-D analyzer-optimize
+-main Main
+-js bin/bundle.js
