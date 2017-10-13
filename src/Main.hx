@@ -53,7 +53,7 @@ class Main extends hxd.App {
     var shipsTexture:h3d.mat.Texture;
     var ships:Array<Ship> = [];
     var aiming:Null<{x0:Float, y0:Float, cx:Float, cy:Float}>;
-    var torpedoe:Null<{x:Float, y:Float}>;
+    var torpedoe:Null<{x:Float, y:Float, display:h2d.Bitmap}>;
     var touchPoint:h3d.Vector;
     var sea:h2d.Sprite;
     var maxShips:Int = 1;
@@ -75,7 +75,12 @@ class Main extends hxd.App {
 
         interactive.onRelease = function(_) {
             aiming = null;
-            torpedoe = {y:0.0};
+            if (torpedoe == null)
+            {
+                var tile = h2d.Tile.fromColor(0xff0000, 30, 30);
+                var deployX = -sea.x;
+                torpedoe = {x:deployX + s2d.width * 0.5, y:s2d.height, display:new h2d.Bitmap(tile, sea)};
+            }
         };
 
         interactive.onMove = function(e) {
@@ -90,14 +95,20 @@ class Main extends hxd.App {
         updatePeriscope(dt);
         updateShips(dt);
         updateTorpedoe(dt);
+        checkHits(dt);
     }
 
     function updateTorpedoe(dt:Float) {
         if (torpedoe != null){
-            torpedoe.y -= dt*Config.TORPEDOE_VELOCITY;
-            if (torpedoe.y < getHorizon())
+            if (torpedoe.y > getHorizon())
             {
-                if (torpedoe)
+                torpedoe.y -= dt*Config.TORPEDOE_VELOCITY;
+                torpedoe.display.setPos(torpedoe.x, Math.floor(torpedoe.y / 50.0) * 50);
+            }
+            else
+            {
+                torpedoe.display.remove();
+                torpedoe = null;
             }
         }
     }
@@ -121,6 +132,18 @@ class Main extends hxd.App {
         for (ship in ships) {
             for (b in ship.behaviours) {
                 b(this, ship, dt);
+            }
+        }
+    }
+
+    function checkHits(dt:Float) {
+        if (torpedoe != null) {
+            for (ship in ships) {
+                if (ship.display.getBounds().intersects(torpedoe.display.getBounds())) {
+                    ship.velocity = 0.0;
+                    torpedoe.display.remove();
+                    torpedoe = null;
+                }
             }
         }
     }
